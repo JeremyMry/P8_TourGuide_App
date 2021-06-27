@@ -1,11 +1,15 @@
 package com.tourguide.app.models;
 
 public class Location {
-    public final double longitude;
-    public final double latitude;
+    public double longitude;
+    public double latitude;
 
     public Location(double latitude, double longitude) {
         this.latitude = latitude;
         this.longitude = longitude;
+    }
+
+    public Location() {
+
     }
 }

@@ -14,13 +14,12 @@ import java.util.List;
 @Service
 public class TripPricerWebClient {
 
-    private final String BASE_URL = "http://TripPricer:8082";
     private final String BASE_URL_LOCALHOST = "http://localhost:8082";
     private final String PATH_GET_PRICE = "/getPrice";
-    private final String USER = "?user=";
+    private final String USER = "&user=";
     private final String APIKEY = "?apiKey=";
 
-    private final String getPriceUri() { return BASE_URL + PATH_GET_PRICE; }
+    private final String getPriceUri() { return BASE_URL_LOCALHOST + PATH_GET_PRICE; }
 
     public List<Provider> getPrice(String apiKey, User user) {
         RestTemplate restTemplate = new RestTemplate();

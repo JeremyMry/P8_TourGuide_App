@@ -3,10 +3,14 @@ package com.tourguide.app.models;
 import java.util.UUID;
 
 public class Attraction extends Location {
-    public final String attractionName;
-    public final String city;
-    public final String state;
-    public final UUID attractionId;
+    public String attractionName;
+    public String city;
+    public String state;
+    public UUID attractionId;
+
+    public Attraction() {
+        super();
+    }
 
     public Attraction(String attractionName, String city, String state, double latitude, double longitude) {
         super(latitude, longitude);

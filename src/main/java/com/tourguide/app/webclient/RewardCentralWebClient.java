@@ -13,13 +13,12 @@ import java.util.UUID;
 @Service
 public class RewardCentralWebClient {
 
-    private final String BASE_URL = "http://RewardCentral:8083";
     private final String BASE_URL_LOCALHOST = "http://localhost:8083";
-    private final String PATH_GET_REWARD_POINTS = "/getRewardPoints";
+    private final String PATH_GET_REWARD_POINTS = "/getRewardsPoints";
     private final String ATTRACTION = "?attractionId=";
-    private final String USER = "?user=";
+    private final String USER = "&user=";
 
-    private final String getRewardPointsUri() { return BASE_URL + PATH_GET_REWARD_POINTS; }
+    private final String getRewardPointsUri() { return BASE_URL_LOCALHOST + PATH_GET_REWARD_POINTS; }
 
     public int getRewardPoints(UUID attractionId, UUID user) {
         RestTemplate restTemplate = new RestTemplate();

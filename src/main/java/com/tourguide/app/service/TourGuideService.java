@@ -27,6 +27,9 @@ public class TourGuideService {
     public final Tracker tracker;
     boolean testMode = true;
 
+    private static final double STATUTE_MILES_PER_NAUTICAL_MILE = 1.15077945;
+    private int proximityBuffer = 10;
+
     public TourGuideService(GpsUtilWebClient gpsUtilWebClient, RewardCentralWebClient rewardCentralWebClient, TripPricerWebClient tripPricerWebClient) {
         this.gpsUtilWebClient = gpsUtilWebClient;
         this.rewardCentralWebClient = rewardCentralWebClient;
@@ -41,6 +44,7 @@ public class TourGuideService {
         tracker = new Tracker(this);
         addShutDownHook();
     }
+
 
     public List<UserReward> getUserRewards(User user) {
         return user.getUserReward();
@@ -98,7 +102,7 @@ public class TourGuideService {
 
         Map<Attraction, Double> attractionMap = new HashMap<>();
         for(Attraction attraction : gpsUtilWebClient.getAttractions()) {
-            attractionMap.put(attraction, gpsUtilWebClient.getDistance(attraction, visitedLocation.location));
+            attractionMap.put(attraction, getDistance(attraction, visitedLocation.location));
         }
 
         List<Map.Entry<Attraction, Double>> list = new ArrayList<>(attractionMap.entrySet());
@@ -137,7 +141,7 @@ public class TourGuideService {
         for(VisitedLocation visitedLocation : userLocations) {
             for(Attraction attraction : attractions) {
                 if(user.getUserReward().stream().noneMatch(r -> r.attraction.attractionName.equals(attraction.attractionName))) {
-                    if(gpsUtilWebClient.nearAttraction(visitedLocation, attraction)) {
+                    if(nearAttraction(visitedLocation, attraction)) {
                         user.addUserReward(new UserReward(visitedLocation, attraction, getRewardPoints(attraction, user)));
                     }
                 }
@@ -160,6 +164,28 @@ public class TourGuideService {
         rewardsExecutorService.shutdown();
     }
 
+    public boolean isWithinAttractionProximity(Attraction attraction, Location location) {
+        int attractionProximityRange = 200;
+        return !(getDistance(attraction, location) > attractionProximityRange);
+    }
+
+    public boolean nearAttraction(VisitedLocation visitedLocation, Attraction attraction) {
+        return !(getDistance(visitedLocation.location, attraction) > proximityBuffer);
+    }
+
+    public double getDistance(Location loc1, Location loc2) {
+        double lat1 = Math.toRadians(loc1.latitude);
+        double lon1 = Math.toRadians(loc1.longitude);
+        double lat2 = Math.toRadians(loc2.latitude);
+        double lon2 = Math.toRadians(loc2.longitude);
+
+        double angle = Math.acos(Math.sin(lat1) * Math.sin(lat2)
+                + Math.cos(lat1) * Math.cos(lat2) * Math.cos(lon1 - lon2));
+
+        double nauticalMiles = 60 * Math.toDegrees(angle);
+        double statuteMiles = STATUTE_MILES_PER_NAUTICAL_MILE * nauticalMiles;
+        return statuteMiles;
+    }
 
     private void addShutDownHook() {
         Runtime.getRuntime().addShutdownHook(new Thread() {
