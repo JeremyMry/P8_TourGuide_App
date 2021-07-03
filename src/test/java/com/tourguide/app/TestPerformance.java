@@ -51,10 +51,15 @@ public class TestPerformance {
 
         List<User> allUsers = tourGuideService.getAllUsers();
 
+
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
 
         tourGuideService.trackUserLocationList(allUsers);
+
+        for(User user : allUsers) {
+            tourGuideService.trackUserLocation(user);
+        }
 
         stopWatch.stop();
         tourGuideService.tracker.stopTracking();
@@ -70,7 +75,7 @@ public class TestPerformance {
         TripPricerWebClient tripPricerWebClient = new TripPricerWebClient();
 
         // Users should be incremented up to 100,000, and test finishes within 15 minutes
-        InternalTestHelper.setInternalUserNumber(100000);
+        InternalTestHelper.setInternalUserNumber(10000);
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
@@ -83,6 +88,12 @@ public class TestPerformance {
         allUsers.forEach(u -> u.addToVisitedLocations(new VisitedLocation(u.getUserId(), attraction, new Date())));
 
         tourGuideService.calculateRewardsList(allUsers);
+
+        allUsers.forEach(tourGuideService::calculateRewards);
+
+        for(User user : allUsers) {
+            assertTrue(user.getUserReward().size() > 0);
+        }
 
         stopWatch.stop();
         tourGuideService.tracker.stopTracking();

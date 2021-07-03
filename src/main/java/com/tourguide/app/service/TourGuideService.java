@@ -45,7 +45,6 @@ public class TourGuideService {
         addShutDownHook();
     }
 
-
     public List<UserReward> getUserRewards(User user) {
         return user.getUserReward();
     }
@@ -56,6 +55,7 @@ public class TourGuideService {
                 trackUserLocation(user);
         return visitedLocation;
     }
+
     public User getUser(String userName) {
         return internalUserMap.get(userName);
     }
@@ -140,9 +140,9 @@ public class TourGuideService {
         List<Attraction> attractions = gpsUtilWebClient.getAttractions();
         for(VisitedLocation visitedLocation : userLocations) {
             for(Attraction attraction : attractions) {
-                if(user.getUserReward().stream().noneMatch(r -> r.attraction.attractionName.equals(attraction.attractionName))) {
+                if(user.getUserReward().stream().filter(r -> r.attraction.attractionName.equals(attraction.attractionName)).count() == 0) {
                     if(nearAttraction(visitedLocation, attraction)) {
-                        user.addUserReward(new UserReward(visitedLocation, attraction, getRewardPoints(attraction, user)));
+                            user.addUserReward(new UserReward(visitedLocation, attraction, getRewardPoints(attraction, user)));
                     }
                 }
             }
@@ -150,7 +150,7 @@ public class TourGuideService {
     }
 
     public void calculateRewardsList(List<User> userList) {
-
+        logger.debug("Track user location for user list : nbUsers = " + userList.size());
         ExecutorService rewardsExecutorService = Executors.newFixedThreadPool(1500);
 
         userList.forEach(user -> {
@@ -162,11 +162,6 @@ public class TourGuideService {
         });
 
         rewardsExecutorService.shutdown();
-    }
-
-    public boolean isWithinAttractionProximity(Attraction attraction, Location location) {
-        int attractionProximityRange = 200;
-        return !(getDistance(attraction, location) > attractionProximityRange);
     }
 
     public boolean nearAttraction(VisitedLocation visitedLocation, Attraction attraction) {
@@ -185,6 +180,10 @@ public class TourGuideService {
         double nauticalMiles = 60 * Math.toDegrees(angle);
         double statuteMiles = STATUTE_MILES_PER_NAUTICAL_MILE * nauticalMiles;
         return statuteMiles;
+    }
+
+    public void setProximityBuffer(int proximityBuffer) {
+        this.proximityBuffer = proximityBuffer;
     }
 
     private void addShutDownHook() {
