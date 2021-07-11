@@ -1,6 +1,9 @@
 package com.tourguide.app.webclient;
 
 import com.tourguide.app.models.VisitedLocation;
+import com.tourguide.app.service.TourGuideService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +15,7 @@ import java.util.UUID;
 
 @Service
 public class RewardCentralWebClient {
+    private Logger logger = LoggerFactory.getLogger(TourGuideService.class);
 
     private final String BASE_URL_LOCALHOST = "http://localhost:8083";
     private final String PATH_GET_REWARD_POINTS = "/getRewardsPoints";
@@ -31,7 +35,7 @@ public class RewardCentralWebClient {
         int rewardPoints;
         rewardPoints = result.getBody();
 
+        logger.debug("test");
         return rewardPoints;
     }
-
 }

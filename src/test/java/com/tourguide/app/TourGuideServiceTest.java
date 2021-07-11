@@ -9,9 +9,7 @@ import com.tourguide.app.webclient.TripPricerWebClient;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -117,6 +115,7 @@ public class TourGuideServiceTest {
 
     @Test
     public void trackUserLocation() {
+
         GpsUtilWebClient gpsUtilWebClient = new GpsUtilWebClient();
         RewardCentralWebClient rewardCentralWebClient = new RewardCentralWebClient();
         TripPricerWebClient tripPricerWebClient = new TripPricerWebClient();
@@ -128,32 +127,6 @@ public class TourGuideServiceTest {
         assertEquals(user.getUserId(), visitedLocation.userId);
         assertFalse(user.getVisitedLocations().isEmpty());
     }
-
-    /**@Test
-    public void trackUserLocationList() {
-        GpsUtilWebClient gpsUtilWebClient = new GpsUtilWebClient();
-        RewardCentralWebClient rewardCentralWebClient = new RewardCentralWebClient();
-        TripPricerWebClient tripPricerWebClient = new TripPricerWebClient();
-        TourGuideService tourGuideService = new TourGuideService(gpsUtilWebClient, rewardCentralWebClient, tripPricerWebClient);
-
-        User user = new User(UUID.randomUUID(), "jon", "000", "jon@tourGuide.com");
-        User user1 = new User(UUID.randomUUID(), "jon", "000", "jon@tourGuide.com");
-        User user2 = new User(UUID.randomUUID(), "jon", "000", "jon@tourGuide.com");
-        User user3 = new User(UUID.randomUUID(), "jon", "000", "jon@tourGuide.com");
-
-        List<User> userList = new ArrayList<>();
-        userList.add(user);
-        userList.add(user1);
-        userList.add(user2);
-
-        tourGuideService.trackUserLocationList(userList);
-
-        assertFalse(user.getVisitedLocations().isEmpty());
-        assertFalse(user1.getVisitedLocations().isEmpty());
-        assertFalse(user2.getVisitedLocations().isEmpty());
-        assertTrue(user3.getVisitedLocations().isEmpty());
-
-    }**/
 
     @Test
     public void getNearbyAttractions() {
@@ -172,15 +145,31 @@ public class TourGuideServiceTest {
 
     @Test
     public void getAllUsersLastLocation() {
+        GpsUtilWebClient gpsUtilWebClient = new GpsUtilWebClient();
+        RewardCentralWebClient rewardCentralWebClient = new RewardCentralWebClient();
+        TripPricerWebClient tripPricerWebClient = new TripPricerWebClient();
+        TourGuideService tourGuideService = new TourGuideService(gpsUtilWebClient, rewardCentralWebClient, tripPricerWebClient);
 
+        User user = new User(UUID.randomUUID(), "jon", "000", "jon@tourGuide.com");
+        Double latitude = -117.922008D;
+        Double longitude = 33.817595D;
+        Location location = new Location(latitude, longitude);
+        VisitedLocation visitedLocation = new VisitedLocation(user.getUserId(), location, new Date());
+        user.addToVisitedLocations(visitedLocation);
+
+        User user1 = new User(UUID.randomUUID(), "jon", "000", "jon@tourGuide.com");
+        Double latitude1 = -117.922008D;
+        Double longitude1 = 33.817595D;
+        Location location1 = new Location(latitude1, longitude1);
+        VisitedLocation visitedLocation1 = new VisitedLocation(user1.getUserId(), location1, new Date());
+        user1.addToVisitedLocations(visitedLocation1);
+
+        HashMap<UUID, Location> userLastLocationList = tourGuideService.getAllUsersLastLocation();
+
+        assertEquals(2, userLastLocationList.size());
     }
 
     @Test
-    public void getRewardsPoints() {
-
-    }
-
-    /**@Test
     public void calculateRewards() {
         GpsUtilWebClient gpsUtilWebClient = new GpsUtilWebClient();
         RewardCentralWebClient rewardCentralWebClient = new RewardCentralWebClient();
@@ -190,8 +179,8 @@ public class TourGuideServiceTest {
         User user = new User(UUID.randomUUID(), "jon", "000", "jon@tourGuide.com");
         User user1 = new User(UUID.randomUUID(), "jon", "000", "jon@tourGuide.com");
 
-        Double latitude = 33.817595D;
-        Double longitude = -117.922008D;
+        Double latitude = -117.922008D;
+        Double longitude = 33.817595D;
         Location location = new Location(latitude, longitude);
         VisitedLocation visitedLocation = new VisitedLocation(user.getUserId(), location, new Date());
         user.addToVisitedLocations(visitedLocation);
@@ -203,7 +192,7 @@ public class TourGuideServiceTest {
         assertEquals(user1.getUserReward().size(),0);
         assertTrue(user1.getUserReward().isEmpty());
 
-    }**/
+    }
 
     @Test
     public void nearAllAttractions() {
@@ -224,11 +213,6 @@ public class TourGuideServiceTest {
 
 
         assertEquals(gpsUtilWebClient.getAttractions().size(), userRewards.size());
-    }
-
-    @Test
-    public void calculateRewardsList() {
-
     }
 
     @Test

@@ -8,11 +8,14 @@ import com.tourguide.app.webclient.RewardCentralWebClient;
 import com.tourguide.app.webclient.TripPricerWebClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.IntStream;
@@ -50,10 +53,9 @@ public class TourGuideService {
     }
 
     public VisitedLocation getUserLocation(User user) {
-        VisitedLocation visitedLocation = (user.getVisitedLocations().size() > 0) ?
+        return (user.getVisitedLocations().size() > 0) ?
                 user.getLastVisitedLocation() :
                 trackUserLocation(user);
-        return visitedLocation;
     }
 
     public User getUser(String userName) {
@@ -77,24 +79,21 @@ public class TourGuideService {
     }
 
     public VisitedLocation trackUserLocation(User user) {
-        VisitedLocation visitedLocation = gpsUtilWebClient.getUserLocation(user.getUserId());
-        user.addToVisitedLocations(visitedLocation);
-        calculateRewards(user);
-        return visitedLocation;
+            VisitedLocation visitedLocation = gpsUtilWebClient.getUserLocation(user.getUserId());
+            user.addToVisitedLocations(visitedLocation);
+            calculateRewards(user);
+            return visitedLocation;
     }
 
     public void trackUserLocationList(List<User> userList) {
-        logger.debug("Track user location for user list : nbUsers = " + userList.size());
         ExecutorService trackLocationExecutorService = Executors.newFixedThreadPool(1500);
 
         userList.forEach(user -> {
             Runnable runnableTask = () -> {
-
                 trackUserLocation(user);
             };
             trackLocationExecutorService.submit(runnableTask);
         });
-
         trackLocationExecutorService.shutdown();
     }
 
@@ -142,7 +141,7 @@ public class TourGuideService {
             for(Attraction attraction : attractions) {
                 if(user.getUserReward().stream().filter(r -> r.attraction.attractionName.equals(attraction.attractionName)).count() == 0) {
                     if(nearAttraction(visitedLocation, attraction)) {
-                            user.addUserReward(new UserReward(visitedLocation, attraction, getRewardPoints(attraction, user)));
+                        user.addUserReward(new UserReward(visitedLocation, attraction, rewardCentralWebClient.getRewardPoints(attraction.attractionId, user.getUserId())));
                     }
                 }
             }
@@ -150,12 +149,10 @@ public class TourGuideService {
     }
 
     public void calculateRewardsList(List<User> userList) {
-        logger.debug("Track user location for user list : nbUsers = " + userList.size());
-        ExecutorService rewardsExecutorService = Executors.newFixedThreadPool(1500);
+        ExecutorService rewardsExecutorService = Executors.newFixedThreadPool(10);
 
         userList.forEach(user -> {
             Runnable runnableTask = () -> {
-
                 calculateRewards(user);
             };
             rewardsExecutorService.submit(runnableTask);

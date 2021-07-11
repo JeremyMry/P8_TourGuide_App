@@ -1,18 +1,27 @@
 package com.tourguide.app;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tourguide.app.helper.InternalTestHelper;
 import com.tourguide.app.models.Attraction;
 import com.tourguide.app.models.User;
+import com.tourguide.app.models.UserReward;
 import com.tourguide.app.models.VisitedLocation;
 import com.tourguide.app.service.TourGuideService;
 import com.tourguide.app.webclient.GpsUtilWebClient;
 import com.tourguide.app.webclient.RewardCentralWebClient;
 import com.tourguide.app.webclient.TripPricerWebClient;
 import org.apache.commons.lang3.time.StopWatch;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.springframework.scheduling.annotation.Async;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -40,6 +49,7 @@ public class TestPerformance {
      */
 
     @Test
+    @Async
     public void highVolumeTrackLocation() {
         GpsUtilWebClient gpsUtilWebClient = new GpsUtilWebClient();
         RewardCentralWebClient rewardCentralWebClient = new RewardCentralWebClient();
@@ -51,14 +61,23 @@ public class TestPerformance {
 
         List<User> allUsers = tourGuideService.getAllUsers();
 
-
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
 
-        tourGuideService.trackUserLocationList(allUsers);
+        try {
+            ExecutorService executorService = Executors.newFixedThreadPool(44);
 
-        for(User user : allUsers) {
-            tourGuideService.trackUserLocation(user);
+        for (User user: allUsers) {
+            Runnable runnable = () -> {
+                VisitedLocation visitedLocation = gpsUtilWebClient.getUserLocation(user.getUserId());
+                user.addToVisitedLocations(visitedLocation);
+            };
+            executorService.execute(runnable);
+        }
+        executorService.shutdown();
+        executorService.awaitTermination(15, TimeUnit.MINUTES);
+        }
+		catch (InterruptedException interruptedException) {
         }
 
         stopWatch.stop();
@@ -75,24 +94,46 @@ public class TestPerformance {
         TripPricerWebClient tripPricerWebClient = new TripPricerWebClient();
 
         // Users should be incremented up to 100,000, and test finishes within 15 minutes
-        InternalTestHelper.setInternalUserNumber(10000);
+        InternalTestHelper.setInternalUserNumber(100000);
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
 
         TourGuideService tourGuideService = new TourGuideService(gpsUtilWebClient, rewardCentralWebClient, tripPricerWebClient);
 
-        Attraction attraction = gpsUtilWebClient.getAttractions().get(0);
         List<User> allUsers = tourGuideService.getAllUsers();
 
-        allUsers.forEach(u -> u.addToVisitedLocations(new VisitedLocation(u.getUserId(), attraction, new Date())));
+        Attraction attractionList = gpsUtilWebClient.getAttractions().get(0);
 
-        tourGuideService.calculateRewardsList(allUsers);
+        try {
+            ExecutorService executorService = Executors.newFixedThreadPool(44);
 
-        allUsers.forEach(tourGuideService::calculateRewards);
+            //Execute the code as per in the method "trackUserLocation" in TourGuideService
+            for (User user: allUsers) {
+                Runnable runnable = () -> {
+                    user.addToVisitedLocations(new VisitedLocation(user.getUserId(), attractionList, new Date()));
 
-        for(User user : allUsers) {
-            assertTrue(user.getUserReward().size() > 0);
+                    List<VisitedLocation> userLocations = user.getVisitedLocations();
+                    List<Attraction> attractions = gpsUtilWebClient.getAttractions();
+                    for(VisitedLocation visitedLocation : userLocations) {
+                        for(Attraction attraction : attractions) {
+                            if(user.getUserReward().stream().filter(r -> r.attraction.attractionName.equals(attraction.attractionName)).count() == 0) {
+                                if(tourGuideService.nearAttraction(visitedLocation, attraction)) {
+                                    user.addUserReward(new UserReward(visitedLocation, attraction, rewardCentralWebClient.getRewardPoints(attraction.attractionId, user.getUserId())));
+                                }
+                            }
+                        }
+                    }
+
+                    assertTrue(user.getUserReward().size() > 0);
+                };
+                executorService.execute(runnable);
+            }
+            executorService.shutdown();
+            executorService.awaitTermination(15, TimeUnit.MINUTES);
+
+        }
+        catch (InterruptedException interruptedException) {
         }
 
         stopWatch.stop();
