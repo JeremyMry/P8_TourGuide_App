@@ -27,6 +27,7 @@ public class TourGuideServiceTest {
 
         Attraction attraction = gpsUtilWebClient.getAttractions().get(0);
         user.addToVisitedLocations(new VisitedLocation(user.getUserId(), attraction, new Date()));
+JeremyMry
 
         tourGuideService.trackUserLocation(user);
 
@@ -148,25 +149,17 @@ public class TourGuideServiceTest {
         GpsUtilWebClient gpsUtilWebClient = new GpsUtilWebClient();
         RewardCentralWebClient rewardCentralWebClient = new RewardCentralWebClient();
         TripPricerWebClient tripPricerWebClient = new TripPricerWebClient();
+
+        InternalTestHelper.setInternalUserNumber(3);
+
         TourGuideService tourGuideService = new TourGuideService(gpsUtilWebClient, rewardCentralWebClient, tripPricerWebClient);
 
-        User user = new User(UUID.randomUUID(), "jon", "000", "jon@tourGuide.com");
-        Double latitude = -117.922008D;
-        Double longitude = 33.817595D;
-        Location location = new Location(latitude, longitude);
-        VisitedLocation visitedLocation = new VisitedLocation(user.getUserId(), location, new Date());
-        user.addToVisitedLocations(visitedLocation);
 
-        User user1 = new User(UUID.randomUUID(), "jon", "000", "jon@tourGuide.com");
-        Double latitude1 = -117.922008D;
-        Double longitude1 = 33.817595D;
-        Location location1 = new Location(latitude1, longitude1);
-        VisitedLocation visitedLocation1 = new VisitedLocation(user1.getUserId(), location1, new Date());
-        user1.addToVisitedLocations(visitedLocation1);
+        HashMap<UUID, Location> usersLastLocation = tourGuideService.getAllUsersLastLocation();
 
-        HashMap<UUID, Location> userLastLocationList = tourGuideService.getAllUsersLastLocation();
+        tourGuideService.tracker.stopTracking();
 
-        assertEquals(2, userLastLocationList.size());
+        assertEquals(3, usersLastLocation.size());
     }
 
     @Test
