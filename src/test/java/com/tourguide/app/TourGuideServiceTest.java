@@ -27,8 +27,7 @@ public class TourGuideServiceTest {
 
         Attraction attraction = gpsUtilWebClient.getAttractions().get(0);
         user.addToVisitedLocations(new VisitedLocation(user.getUserId(), attraction, new Date()));
-JeremyMry
-
+        
         tourGuideService.trackUserLocation(user);
 
         List<UserReward> userRewards = tourGuideService.getUserRewards(user);
