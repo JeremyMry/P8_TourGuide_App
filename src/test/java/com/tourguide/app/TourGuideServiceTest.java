@@ -9,7 +9,10 @@ import com.tourguide.app.webclient.TripPricerWebClient;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.util.*;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -27,7 +30,7 @@ public class TourGuideServiceTest {
 
         Attraction attraction = gpsUtilWebClient.getAttractions().get(0);
         user.addToVisitedLocations(new VisitedLocation(user.getUserId(), attraction, new Date()));
-        
+
         tourGuideService.trackUserLocation(user);
 
         List<UserReward> userRewards = tourGuideService.getUserRewards(user);
@@ -115,7 +118,6 @@ public class TourGuideServiceTest {
 
     @Test
     public void trackUserLocation() {
-
         GpsUtilWebClient gpsUtilWebClient = new GpsUtilWebClient();
         RewardCentralWebClient rewardCentralWebClient = new RewardCentralWebClient();
         TripPricerWebClient tripPricerWebClient = new TripPricerWebClient();
@@ -171,8 +173,8 @@ public class TourGuideServiceTest {
         User user = new User(UUID.randomUUID(), "jon", "000", "jon@tourGuide.com");
         User user1 = new User(UUID.randomUUID(), "jon", "000", "jon@tourGuide.com");
 
-        Double latitude = -117.922008D;
-        Double longitude = 33.817595D;
+        Double latitude = 33.817595D;
+        Double longitude = -117.922008D;
         Location location = new Location(latitude, longitude);
         VisitedLocation visitedLocation = new VisitedLocation(user.getUserId(), location, new Date());
         user.addToVisitedLocations(visitedLocation);
@@ -183,7 +185,6 @@ public class TourGuideServiceTest {
         assertFalse(user.getUserReward().isEmpty());
         assertEquals(user1.getUserReward().size(),0);
         assertTrue(user1.getUserReward().isEmpty());
-
     }
 
     @Test
@@ -206,6 +207,7 @@ public class TourGuideServiceTest {
 
         assertEquals(gpsUtilWebClient.getAttractions().size(), userRewards.size());
     }
+
 
     @Test
     public void nearAttraction() {

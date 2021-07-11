@@ -2,13 +2,16 @@ package com.tourguide.app.controller;
 
 import com.jsoniter.output.JsonStream;
 import com.tourguide.app.models.Attraction;
+import com.tourguide.app.models.Location;
 import com.tourguide.app.service.TourGuideService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 public class TourGuideController {
@@ -37,8 +40,8 @@ public class TourGuideController {
     }
 
     @RequestMapping("/getAllCurrentLocations")
-    public String getAllCurrentLocations() {
-        return JsonStream.serialize(tourGuideService.getAllUsersLastLocation());
+    public HashMap<UUID, Location> getAllCurrentLocations() {
+        return tourGuideService.getAllUsersLastLocation();
     }
 
     @RequestMapping("/getTripDeals")
