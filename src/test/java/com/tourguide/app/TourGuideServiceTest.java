@@ -168,23 +168,21 @@ public class TourGuideServiceTest {
         GpsUtilWebClient gpsUtilWebClient = new GpsUtilWebClient();
         RewardCentralWebClient rewardCentralWebClient = new RewardCentralWebClient();
         TripPricerWebClient tripPricerWebClient = new TripPricerWebClient();
+
+        InternalTestHelper.setInternalUserNumber(2);
+
         TourGuideService tourGuideService = new TourGuideService(gpsUtilWebClient, rewardCentralWebClient, tripPricerWebClient);
 
-        User user = new User(UUID.randomUUID(), "jon", "000", "jon@tourGuide.com");
-        User user1 = new User(UUID.randomUUID(), "jon", "000", "jon@tourGuide.com");
+        List<User> allUsers = tourGuideService.getAllUsers();
 
-        Double latitude = 33.817595D;
-        Double longitude = -117.922008D;
-        Location location = new Location(latitude, longitude);
-        VisitedLocation visitedLocation = new VisitedLocation(user.getUserId(), location, new Date());
-        user.addToVisitedLocations(visitedLocation);
+        Attraction attractionList = gpsUtilWebClient.getAttractions().get(0);
 
-        tourGuideService.calculateRewards(user);
-
-        assertEquals(user.getUserReward().size(), 1);
-        assertFalse(user.getUserReward().isEmpty());
-        assertEquals(user1.getUserReward().size(),0);
-        assertTrue(user1.getUserReward().isEmpty());
+        for(User user: allUsers) {
+            user.addToVisitedLocations(new VisitedLocation(user.getUserId(), attractionList, new Date()));
+            tourGuideService.calculateRewards(user);
+            assertEquals(user.getUserReward().size(), 1);
+            assertFalse(user.getUserReward().isEmpty());
+        }
     }
 
     @Test

@@ -56,29 +56,16 @@ public class TestPerformance {
         TripPricerWebClient tripPricerWebClient = new TripPricerWebClient();
 
         // Users should be incremented up to 100,000, and test finishes within 15 minutes
-        InternalTestHelper.setInternalUserNumber(100000);
-        TourGuideService tourGuideService = new TourGuideService(gpsUtilWebClient, rewardCentralWebClient, tripPricerWebClient);
-
-        List<User> allUsers = tourGuideService.getAllUsers();
+        InternalTestHelper.setInternalUserNumber(100);
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
 
-        try {
-            ExecutorService executorService = Executors.newFixedThreadPool(44);
+        TourGuideService tourGuideService = new TourGuideService(gpsUtilWebClient, rewardCentralWebClient, tripPricerWebClient);
 
-        for (User user: allUsers) {
-            Runnable runnable = () -> {
-                VisitedLocation visitedLocation = gpsUtilWebClient.getUserLocation(user.getUserId());
-                user.addToVisitedLocations(visitedLocation);
-            };
-            executorService.execute(runnable);
-        }
-        executorService.shutdown();
-        executorService.awaitTermination(15, TimeUnit.MINUTES);
-        }
-		catch (InterruptedException interruptedException) {
-        }
+        List<User> allUsers = tourGuideService.getAllUsers();
+
+        tourGuideService.trackUserLocationList(allUsers);
 
         stopWatch.stop();
         tourGuideService.tracker.stopTracking();
@@ -94,7 +81,7 @@ public class TestPerformance {
         TripPricerWebClient tripPricerWebClient = new TripPricerWebClient();
 
         // Users should be incremented up to 100,000, and test finishes within 15 minutes
-        InternalTestHelper.setInternalUserNumber(100000);
+        InternalTestHelper.setInternalUserNumber(100);
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
@@ -105,36 +92,11 @@ public class TestPerformance {
 
         Attraction attractionList = gpsUtilWebClient.getAttractions().get(0);
 
-        try {
-            ExecutorService executorService = Executors.newFixedThreadPool(44);
-
-            //Execute the code as per in the method "trackUserLocation" in TourGuideService
-            for (User user: allUsers) {
-                Runnable runnable = () -> {
-                    user.addToVisitedLocations(new VisitedLocation(user.getUserId(), attractionList, new Date()));
-
-                    List<VisitedLocation> userLocations = user.getVisitedLocations();
-                    List<Attraction> attractions = gpsUtilWebClient.getAttractions();
-                    for(VisitedLocation visitedLocation : userLocations) {
-                        for(Attraction attraction : attractions) {
-                            if(user.getUserReward().stream().filter(r -> r.attraction.attractionName.equals(attraction.attractionName)).count() == 0) {
-                                if(tourGuideService.nearAttraction(visitedLocation, attraction)) {
-                                    user.addUserReward(new UserReward(visitedLocation, attraction, rewardCentralWebClient.getRewardPoints(attraction.attractionId, user.getUserId())));
-                                }
-                            }
-                        }
-                    }
-
-                    assertTrue(user.getUserReward().size() > 0);
-                };
-                executorService.execute(runnable);
-            }
-            executorService.shutdown();
-            executorService.awaitTermination(15, TimeUnit.MINUTES);
-
+        for(User user: allUsers) {
+            user.addToVisitedLocations(new VisitedLocation(user.getUserId(), attractionList, new Date()));
         }
-        catch (InterruptedException interruptedException) {
-        }
+
+        tourGuideService.calculateRewardsList(allUsers);
 
         stopWatch.stop();
         tourGuideService.tracker.stopTracking();

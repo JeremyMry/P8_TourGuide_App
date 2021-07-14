@@ -14,10 +14,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 import java.util.stream.IntStream;
 
 @Service
@@ -86,15 +83,22 @@ public class TourGuideService {
     }
 
     public void trackUserLocationList(List<User> userList) {
-        ExecutorService trackLocationExecutorService = Executors.newFixedThreadPool(1500);
+        try {
+            ExecutorService trackLocationExecutorService = Executors.newFixedThreadPool(1500);
 
-        userList.forEach(user -> {
-            Runnable runnableTask = () -> {
-                trackUserLocation(user);
-            };
-            trackLocationExecutorService.submit(runnableTask);
-        });
-        trackLocationExecutorService.shutdown();
+            userList.forEach(user -> {
+                Runnable runnableTask = () -> {
+                    trackUserLocation(user);
+                };
+                trackLocationExecutorService.execute(runnableTask);
+            });
+
+            trackLocationExecutorService.shutdown();
+            trackLocationExecutorService.awaitTermination(15, TimeUnit.MINUTES);
+
+        }
+        catch (InterruptedException interruptedException) {
+        }
     }
 
     public List<NearbyAttractions> getNearByAttractions(VisitedLocation visitedLocation) {
@@ -149,16 +153,23 @@ public class TourGuideService {
     }
 
     public void calculateRewardsList(List<User> userList) {
-        ExecutorService rewardsExecutorService = Executors.newFixedThreadPool(10);
 
-        userList.forEach(user -> {
-            Runnable runnableTask = () -> {
-                calculateRewards(user);
-            };
-            rewardsExecutorService.submit(runnableTask);
-        });
+        try {
+            ExecutorService rewardsExecutorService = Executors.newFixedThreadPool(1500);
 
-        rewardsExecutorService.shutdown();
+            userList.forEach(user -> {
+                Runnable runnableTask = () -> {
+                    calculateRewards(user);
+                };
+                rewardsExecutorService.execute(runnableTask);
+            });
+
+            rewardsExecutorService.shutdown();
+            rewardsExecutorService.awaitTermination(15, TimeUnit.MINUTES);
+
+        }
+        catch (InterruptedException interruptedException) {
+        }
     }
 
     public boolean nearAttraction(VisitedLocation visitedLocation, Attraction attraction) {
