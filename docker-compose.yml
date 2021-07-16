@@ -1,0 +1,25 @@
+version: "3.9"
+services:
+  tourGuideApp:
+    image: tourguideapp:latest
+    ports:
+      - 8080:8080
+    depends_on:
+      - gpsUtil
+      - rewardCentral
+      - tripPricer
+
+  gpsUtil:
+    image: gpsutil:latest
+    ports:
+      - 8081:8081
+
+  rewardCentral:
+    image: rewardcentral:latest
+    ports:
+      - 8083:8083
+
+  tripPricer:
+    image: trippricer:latest
+    ports:
+      - 8082:8082
